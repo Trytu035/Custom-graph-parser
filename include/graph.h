@@ -157,7 +157,7 @@ namespace graph
         Matrix(size_t rows, size_t cols){
             this->rows = rows;
             this->cols = cols;
-            this->data.resize(rows * cols, 0);
+            this->data.resize(rows * cols);
         }
 
         // void resize(size_t rows, size_t cols){
@@ -203,7 +203,7 @@ namespace graph
 
 
         template<typename T_result, typename T_self>
-        void for_each(void (*iterate)(T&, int, int, T_result&, T_self*), T_result& result, T_self* self){
+        void for_each(void (*iterate)(T&, int&, int&, T_result&, T_self*), T_result& result, T_self* self){
         // void for_each(void (*iterate)(T& value, int i, int j, T_self* self), T_self* self){
         // void for_each(void (*iterate)(T& value)){
         // void for_each(lambda [](int value, int &i, int &j)->void iterate){
@@ -253,6 +253,12 @@ namespace graph
 
         void edges(set<edge>& result);
         void incidencies(Matrix<int>& result);
+        int rank();
+        int size();
+        int degree(const Node& vertex);
+        bool is_simple();
+        bool is_full();
+        void compliment_edges(set<edge>& result);
     };
 }
 #endif

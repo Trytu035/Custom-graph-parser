@@ -26,8 +26,8 @@ graph::Graph::Graph(ifstream& source){
 			file.push_back(strdup(line));
 		}
 	}else{
+		cout << "Niepoprawna nazwa pliku" << endl;
         return;
-		// cout << "Nie otwarto" << endl;
 	}
 
     for (vector<char*>::iterator i=file.begin(); i!=file.end(); i++){
@@ -95,27 +95,21 @@ graph::Graph::Graph(ifstream& source){
 		// incidency_matrix[i] = vector<int>(edge_count(edge_list), 0);
 	// }
     
-    // cout << edge_indeces_list << endl << neighborhood_matrix;
 	for_each(edge_indeces_list.begin(), edge_indeces_list.end(), [&](edge_index edge){
 		this->neighborhood_matrix(edge.first, edge.second) += edge.count;
 		if (edge.first != edge.second){
 			this->neighborhood_matrix(edge.second, edge.first) += edge.count;	// comment for directional edges
 		}
 	});
-    // cout << this->neighborhood_matrix.data.size() << " last" << endl;
 }
 
 graph::Graph::Graph(){
     this->vertices = std::set<Node>();
     this->neighborhood_matrix = Matrix<int>(0, 0);
-    // cout << this->neighborhood_matrix.data.size();
 }
 
 void graph::Graph::edges(set<edge>& resulting_set){
-    int i = 0, j = 0;
-    // cout << this->neighborhood_matrix.data.size();
-    this->neighborhood_matrix.for_each<set<edge>, Graph>([](int& value, int i, int j, set<edge>& result, Graph* self){
-        cout << value << " ";
+    this->neighborhood_matrix.for_each<set<edge>, Graph>([](int& value, int& i, int& j, set<edge>& result, Graph* self){
         if (value > 0){
             result.insert(edge(
                 *next(self->vertices.begin(), i),
@@ -124,24 +118,99 @@ void graph::Graph::edges(set<edge>& resulting_set){
             ));
         }
     }, resulting_set, this);
-    cout << endl;
 }
 
 void graph::Graph::incidencies(Matrix<int>& result_matrix){
-    int i = 0, j = 0;
-    // cout << this->neighborhood_matrix.data.size();
-    this->neighborhood_matrix.for_each<Matrix<int>, Graph>([](int& value, int i, int j, Matrix<int>& result, Graph* self){
-        cout << value << " ";
-        if (value > 0 && i >= j){
-            for (int count_i = 0; count_i < value; count_i++){
-                // result(i, j)
-            }
-            // result.insert(edge(
-            //     *next(self->vertices.begin(), i),
-            //     *next(self->vertices.begin(), j),
-            //     value
-            // ));
+    int a;
+    result_matrix.for_each<int, int>([](int& val, int& i, int& j, int& result, int* self){
+        val = 0;
+    }, a, &a);
+
+    set<graph::edge> g_edges;
+    this->edges(g_edges);
+    int i = 0;
+    for_each(g_edges.begin(), g_edges.end(), [&](graph::edge edge_val){
+        int index1 = distance(this->vertices.begin(), this->vertices.find(edge_val.first));
+        int index2 = distance(this->vertices.begin(), this->vertices.find(edge_val.second));
+        for (int j = 0; j < edge_val.count; j++){
+            result_matrix(index1,i) = 1;
+            result_matrix(index2,i) = 1;
+            cout << i << "-" << index1 << endl;
+            i++;
         }
-    }, result_matrix, this);
+    });
+    
     cout << endl;
+}
+
+int graph::Graph::rank(){
+    return this->vertices.size();
+}
+
+int graph::Graph::size(){
+    set<graph::edge> edges;
+    int count = 0;
+
+    this->edges(edges);
+	for_each(edges.begin(), edges.end(), [&](graph::edge edge){
+		count += edge.count;
+	});
+
+    return count;
+}
+
+// -1 if node doesn't exist. Degree otherwise
+int graph::Graph::degree(const Node& vertex){
+    set<Node>::iterator result = this->vertices.find(vertex);
+    int degree = 0;
+
+    if (result != this->vertices.end()){
+        int index = distance(this->vertices.begin(), result);
+
+        for (int i=0; i < this->rank(); i++){
+            if (i == index){
+                degree += 2 * this->neighborhood_matrix(index, i);
+            }else{
+                degree += this->neighborhood_matrix(index, i);
+            }
+        }
+        return degree;
+    }
+    return -1;
+}
+
+bool graph::Graph::is_simple(){
+    bool result = true;
+
+    this->neighborhood_matrix.for_each<bool, bool>([](int& val, int& i, int& j, bool& result, bool* self){
+        if (val > 1){
+            result = false;
+        }
+    }, result, &result);
+    return result;
+}
+
+bool graph::Graph::is_full(){
+    bool result = true;
+
+    this->neighborhood_matrix.for_each<bool, bool>([](int& val, int& i, int& j, bool& result, bool* self){
+        if (val < 1){
+            result = false;
+        }
+    }, result, &result);
+    return result;
+}
+
+void graph::Graph::compliment_edges(set<edge>& result){
+    this->neighborhood_matrix.for_each<set<edge>, Graph>([](int& val, int& i, int& j, set<edge>& result, Graph* self){
+        if (val < 1){
+            result.insert(edge(
+                *next(self->vertices.begin(), i),
+                *next(self->vertices.begin(), j),
+                1,
+                false,
+                0
+            ));
+        }
+    }, result, this);
 }

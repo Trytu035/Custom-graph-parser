@@ -102,26 +102,26 @@ using namespace std;
 	}
 // }
 
-
 void zadanie1(char*);
-
-// template<typename _T1>
-int edge_count(set<graph::edge> edges){
-	int count = 0;
-	for_each(edges.begin(), edges.end(), [&](graph::edge edge){
-		count += edge.count;
-	});
-	return count;
-}
+void zadanie2(char*);
+void zadanie3(char*);
+void zadanie4(char*);
+void zadanie5(char*);
+void (*zadania[])(char*) = {zadanie1, zadanie2, zadanie3, zadanie4, zadanie5};
 
 int main(int argc, char** argv) {
-// int main() {
-//	 cout << "hello world" << endl;
-	// cout << argv[0] << endl;
-	if (argc == 2){
-		zadanie1(argv[1]);
+	if (argc == 3){
+		int task_index = atoi(argv[1]);
+		cout << task_index << endl;
+		if (task_index > 0 && task_index <= sizeof(zadania)/sizeof(*zadania)){
+			zadania[task_index - 1](argv[2]);
+		}else{
+			cout << "Niepoprawny pierwszy argument." << endl;
+			cout << "Skladnia: \n my_project.exe [1-4] nazwa_pliku \n na przyklad ./my_project.exe 1 ../graf.txt" << endl;
+		}
 	} else {
 		cout << "niepoprawna liczba argumentow: " << argc << endl;
+		cout << "Skladnia: \n my_project.exe [1-4] nazwa_pliku \n na przyklad ./my_project.exe 1 ../graf.txt" << endl;
 	}
 	return 0;
 }
@@ -132,140 +132,87 @@ void zadanie1(char *filename){
 		graph::Graph g(plik);
 		set<graph::edge> edges;
 		g.edges(edges);
-		graph::Matrix<int> incidency_matrix(g.vertices.size(), edge_count(edges));
+		graph::Matrix<int> incidency_matrix(g.vertices.size(), g.size());
 		g.incidencies(incidency_matrix);
 
 		cout << "Liczba wierzcholkow grafu G wynosi " << g.vertices.size() << endl;
 		cout << "Zbior wierzcholkow V = {" << g.vertices << "} " << endl;
-		cout << "Liczba krawedzi grafu G wynosi " << edge_count(edges) << endl;
+		cout << "Liczba krawedzi grafu G wynosi " << g.size() << endl;
 		cout << "Zbior krawedzi K = {" << edges << "}" << endl;
 		cout << "Maciez sasiedztwa:" << endl << g.neighborhood_matrix << endl;
 		cout << "Maciez incydencji:" << endl << incidency_matrix << endl;
 
+		// for_each(g.vertices.begin(), g.vertices.end(), [](graph::Node vertex){
+
+		// });
+
 		plik.close();
 	}
-/* 
-	// set<vertex_name, (vertex_name a, vertex_name b){ return strcmp(a, b)}> vertex_list;	// set of vertex in plain text
-	auto vertex_compare_function = [](vertex_name a, vertex_name b){ return (strcmp(a, b) < 0) ? true : false; };
-
-	set<vertex_name, decltype(vertex_compare_function)> vertex_list(vertex_compare_function);	// set of vertex in plain text
-	// set<edge, decltype(edge_compare_function)> neighbor_list(edge_compare_function);	// set of pair of vertex (from vertex_list) and pointer to name of other vertex
-	// set<edge, decltype(edge_compare_function)> edge_list(edge_compare_function);	// set of pair of vertex (from vertex_list) and other vertex (from vertex_list) equivalent to the name from neighbors set
-	set<edge> neighbor_list;	// set of pair of vertex (from vertex_list) and pointer to name of other vertex
-	set<edge> edge_list;	// set of pair of vertex (from vertex_list) and other vertex (from vertex_list) equivalent to the name from neighbors set
-	set<edge_index> edge_indeces_list;	// -,,-
-	vector<vector<int>> neighborhood_matrix;
-	vector<vector<int>> incidency_matrix;
-	
-	vector<char*> file;
-	
-	if (plik.is_open()){
-		char line[MAX_LINE_LENGTH];
-	
-		while (plik.getline(line, MAX_LINE_LENGTH)){
-			file.push_back(strdup(line));
-		}
-	}else{
-		cout << "Nie otwarto" << endl;
-	}
-	
-	for (vector<char*>::iterator i=file.begin(); i!=file.end(); i++){
-		char *context = NULL;
-		char* ptr = NULL;
-		char* vertex_ptr = NULL;
-
-		ptr = strtok_r(*i, ":", &context);	// pierwszy token
-		if (ptr == NULL){ continue; }
-		vertex_ptr = ptr;
-		vertex_list.insert(vertex_ptr);
-		ptr = strtok_r(NULL, ",", &context);
-
-		while (ptr != NULL){	// TODO: ensure, vertex exist at the end
-			edge new_edge(vertex_ptr, ptr + strspn(ptr, " \n\t"));
-
-			pair<set<edge>::iterator, bool> edge_found = neighbor_list.insert(new_edge);
-			
-			if (edge_found.second == false){	//TODO: check if new_edge has count higher than 1 or it's own full_edges
-				int full_edges = edge_found.first->count - abs(edge_found.first->direction);
-				int new_full_edges = 0;
-
-				if ((edge_found.first->direction < 0) != (new_edge.direction < 0)){	// value of subtracted direction
-					new_full_edges = min(abs(edge_found.first->direction), abs(new_edge.direction));
-				}else if (edge_found.first->direction == 0 && new_edge.direction == 0){	// it's full edge (probably edge to self)
-					new_full_edges += 1;
-				}
-				edge_found.first->direction += new_edge.direction;
-				edge_found.first->count = full_edges + new_full_edges + abs(edge_found.first->direction);
-			}
-			ptr = strtok_r(NULL, ",", &context);
-		}
-	}
-
-	for_each(neighbor_list.begin(), neighbor_list.end(), [&](edge edge_val){
-		set<vertex_name>::iterator result1 = vertex_list.find(edge_val.first);
-		
-		if (result1 != vertex_list.end()){
-			int index1 = distance(vertex_list.begin(), result1);
-			set<vertex_name>::iterator result2 = vertex_list.find(edge_val.second);
-			
-			if (result2 != vertex_list.end()){
-				int index2 = distance(vertex_list.begin(), result2);
-
-				if (edge_val.direction != 0){
-                    cout << "Krawedz " << index1 << "-" << index2 << " jest niedomknieta w pliku zrodlowym.";
-				}
-				edge_indeces_list.insert(edge_index(index1, index2, edge_val));
-				edge_list.insert(edge(*result1, *result2, edge_val.count, edge_val.direction));
-			}else {
-				cout << index1 << "-X ta krawedz nie istnieje" << endl;
-			}
-		}else {
-			cout << "X-X ta krawedz nie istnieje" << endl;
-		}
-	}); */
-/* 
-	cout << "Liczba wierzcholkow grafu G wynosi " << vertex_list.size() << endl;
-	cout << "Zbior wierzcholkow V = {" << vertex_list << "} " << endl;
-	cout << "Liczba krawedzi grafu G wynosi " << edge_count(edge_list) << endl;
-	cout << "Zbior krawedzi K = {" << edge_list << "}" << endl;
-
-	cout << edge_list << endl;
-	cout << edge_indeces_list << endl;
-	
-	neighborhood_matrix.resize(vertex_list.size());
-	incidency_matrix.resize(vertex_list.size());
-	for (int i = 0; i < vertex_list.size(); i++){
-		neighborhood_matrix[i] = vector<int>(vertex_list.size(), 0);
-		incidency_matrix[i] = vector<int>(edge_count(edge_list), 0);
-	}
-
-	for_each(edge_indeces_list.begin(), edge_indeces_list.end(), [&](edge_index edge){
-		neighborhood_matrix[edge.first][edge.second] = edge.count;
-		if (edge.first != edge.second){
-			neighborhood_matrix[edge.second][edge.first] += edge.count;	// comment for directional edges
-		}
-	});
-
-	for_each(edge_list.begin(), edge_list.end(), [&](edge edge_val){
-		int incidency_i = -1;
-		int incidency_j = distance(edge_list.begin(), edge_list.find(edge_val));
-		int sum_of_edges = 0;
-		for_each(edge_list.begin(), edge_list.find(edge_val), [&sum_of_edges](edge edge_val){
-			sum_of_edges += edge_val.count - 1;
-		});
-		incidency_j += sum_of_edges;
-		
-		for (int i=0; i < edge_val.count; i++){	//	TODO: check for directions
-			incidency_i = distance(vertex_list.begin(), vertex_list.find(edge_val.first));
-			incidency_matrix[incidency_i][incidency_j + i] = 1;
-			incidency_i = distance(vertex_list.begin(), vertex_list.find(edge_val.second));
-			incidency_matrix[incidency_i][incidency_j + i] = 1;
-		}
-	});
-
-	cout << neighborhood_matrix << endl << endl;
-
-	cout << incidency_matrix << endl; */
-	
 	plik.close();
+}
+
+void zadanie2(char* filename){
+	ifstream plik(filename);
+	if (plik.is_open()){
+		graph::Graph g(plik);
+		cout << "Rzad grafu G wynosi " << g.rank() << endl;
+		cout << "Rozmiar grafu G wynosi " << g.size() << endl;
+		cout << "Stopnie wierzcholkow:" << endl;
+		for_each(g.vertices.begin(), g.vertices.end(), [&](graph::Node vertex){
+			cout << "deg(" << vertex.name << ") = " << g.degree(vertex) << endl;
+		});
+		plik.close();
+	}
+}
+
+
+void zadanie3(char* filename){
+	ifstream plik(filename);
+	if (plik.is_open()){
+		graph::Graph g(plik);
+		cout << "Graf G jest grafem " << (g.is_simple() ? "prostym" : "ogolnym") << endl;
+		plik.close();
+	}
+}
+
+void zadanie4(char* filename){
+	ifstream plik(filename);
+	if (plik.is_open()){
+		graph::Graph g(plik);
+		bool is_g_full = g.is_full();
+
+		if (is_g_full){
+			cout << "Graf G jest grafem pelnym" << endl;
+		}else{
+			std::set<graph::edge> compliment;
+
+			g.compliment_edges(compliment);
+			cout << "Graf G nie jest grafem pelnym" << endl;
+			cout << "Krawedzie dopelnienia grafu G: " << compliment << endl;
+		}
+		plik.close();
+	}
+}
+
+void zadanie5(char* filename){
+	ifstream plik(filename);
+	if (plik.is_open()){
+		graph::Graph g(plik);
+		set<graph::edge> edges;
+
+		g.edges(edges);
+		for_each(g.vertices.begin(), g.vertices.end(), [&](graph::Node vertex){
+			set<graph::Node> neighbors;
+			for_each(edges.begin(), edges.end(), [&](graph::edge edge){
+				if (edge.first == vertex){
+					neighbors.insert(graph::Node(edge.second));
+				}else if (edge.second == vertex){
+					neighbors.insert(graph::Node(edge.first));
+				}
+			});
+			cout << vertex << " -> " << neighbors << endl;
+		});
+
+		plik.close();
+	}
 }
